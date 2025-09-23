@@ -1,0 +1,82 @@
+# Fuzzy Gospel Consolidation Configuration
+
+# Data Paths
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  chronology_file: "ChronologyOfTheFourGospels_PW.xml"
+  gospels:
+    matthew: "EnglishNIVMatthew40_PW.xml"
+    mark: "EnglishNIVMark41_PW.xml"
+    luke: "EnglishNIVLuke42_PW.xml"
+    john: "EnglishNIVJohn43_PW.xml"
+
+# Model Configuration
+models:
+  sentence_transformer: "all-MiniLM-L6-v2"
+  summarization_model: "facebook/bart-large-cnn"
+  device: "cuda"  # or "cpu"
+  
+# Fuzzy Relations Parameters
+fuzzy:
+  similarity_threshold: 0.1  # Minimum similarity to create edge
+  same_event_threshold: 0.8  # Threshold for clustering similar events
+  conflict_threshold: 0.6    # Threshold for detecting conflicts
+  weights:
+    description_similarity: 0.3
+    temporal_proximity: 0.2
+    gospel_overlap: 0.2
+    text_similarity: 0.3
+
+# Graph Neural Network
+gnn:
+  hidden_dim: 256
+  num_layers: 3
+  dropout: 0.1
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 100
+  early_stopping_patience: 10
+
+# Summarization
+summarization:
+  max_length: 1024
+  min_length: 256
+  num_beams: 4
+  length_penalty: 2.0
+  no_repeat_ngram_size: 3
+  temperature: 0.7
+
+# Evaluation
+evaluation:
+  metrics:
+    - "rouge"
+    - "bertscore"
+    - "meteor"
+    - "temporal_coherence"
+    - "conflict_handling"
+    - "redundancy"
+  
+  test_cases:
+    - name: "pedro_negacao"
+      events: [67, 89, 91]
+      conflict: "Número de vezes que o galo canta"
+    - name: "limpeza_templo"
+      events: [12, 45]
+      conflict: "Timing da limpeza do templo"
+    - name: "entrada_triunfal"
+      events: [4, 5, 6]
+      conflict: "Detalhes do animal"
+
+# Output
+output:
+  results_dir: "results"
+  save_intermediate: true
+  generate_plots: true
+  verbose: true
+
+# Logging
+logging:
+  level: "INFO"
+  file: "logs/fuzzy_gospel.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
