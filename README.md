@@ -143,9 +143,9 @@ After execution, check the results/ directory for:
 
 ##  Citation
 
-If you use this work in your research, please cite:
+**IF ACCEPTED AT THE TARGET CONFERENCE**: if you use this work in your research, please cite:
 
-```bibtex
+```bibtex 
 @inproceedings{finger2026fuzzy,
   title={Fuzzy Temporal Anchoring for Narrative Consolidation in Multi-Document Summarization},
   author={Finger, Roger Antonio and Ramos, Gabriel de Oliveira},
