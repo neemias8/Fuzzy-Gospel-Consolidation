@@ -60,13 +60,13 @@ evaluation:
   test_cases:
     - name: "pedro_negacao"
       events: [67, 89, 91]
-      conflict: "Número de vezes que o galo canta"
+      difference: "Número de vezes que o galo canta - diferenças entre evangelhos"
     - name: "limpeza_templo"
       events: [12, 45]
-      conflict: "Timing da limpeza do templo"
+      difference: "Timing da limpeza do templo - diferentes momentos nos evangelhos"
     - name: "entrada_triunfal"
       events: [4, 5, 6]
-      conflict: "Detalhes do animal"
+      difference: "Detalhes do animal - variações na descrição entre evangelhos"
 
 # Output
 output:

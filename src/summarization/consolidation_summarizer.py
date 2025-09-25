@@ -15,22 +15,51 @@ logger = logging.getLogger(__name__)
 class ConsolidationSummarizer:
     """Main summarizer for consolidating Gospel narratives"""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, model_name: str):
         """
         Initialize the consolidation summarizer.
         
         Args:
-            config: Configuration dictionary
+            model_name: Name or path of the summarization model
         """
-        self.config = config
-        self.summarization_config = config.get('summarization', {})
+        self.model_name = model_name
         
         # Initialize the text generation model
-        model_name = config['models']['summarization_model']
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         
         logger.info(f"ConsolidationSummarizer initialized with {model_name}")
+    
+    def generate_summary_from_clusters(self, clusters: Dict[int, Dict], use_gnn_embeddings: bool = True):
+        """
+        Generate summary from simple clusters (for ablation test)
+        
+        Args:
+            clusters: Dictionary mapping cluster_id -> {'events': [...], 'embeddings': [...]}
+            use_gnn_embeddings: Whether to use GNN embeddings (False for ablation)
+            
+        Returns:
+            Consolidated summary text
+        """
+        logger.info(f"Generating summary from {len(clusters)} clusters (GNN: {use_gnn_embeddings})")
+        
+        summary_parts = []
+        
+        for cluster_id, cluster_data in clusters.items():
+            events = cluster_data['events']
+            if not events:
+                continue
+                
+            # Generate summary for this cluster
+            cluster_summary = self._generate_simple_cluster_summary(events)
+            if cluster_summary:
+                summary_parts.append(cluster_summary)
+        
+        # Combine all cluster summaries
+        full_summary = "\n\n".join(summary_parts)
+        
+        logger.info(f"Summary generated: {len(full_summary)} characters from {len(clusters)} clusters")
+        return full_summary
     
     def generate_consolidated_summary(self, events, graph, model):
         """
@@ -299,3 +328,59 @@ class ConsolidationSummarizer:
             day_text += " ".join(event_texts[:3])  # Limit to avoid too long summaries
         
         return day_text
+    
+    def _generate_simple_cluster_summary(self, events):
+        """
+        Generate summary for a cluster WITHOUT using GNN embeddings or fuzzy relations
+        Simple approach for ablation test
+        """
+        if not events:
+            return ""
+        
+        # Group events by day
+        day_groups = {}
+        for event in events:
+            day = getattr(event, 'day', 'Unknown Day')
+            if day == 'Unknown Day' and hasattr(event, 'description'):
+                day = event.description[:30] + "..." if len(event.description) > 30 else event.description
+            
+            if day not in day_groups:
+                day_groups[day] = []
+            day_groups[day].append(event)
+        
+        summary_parts = []
+        
+        for day, day_events in day_groups.items():
+            # Sort events by ID to maintain some order
+            day_events.sort(key=lambda e: getattr(e, 'id', 0))
+            
+            # Create simple summary for this day
+            day_summary = f"## {day}\n\n"
+            
+            event_descriptions = []
+            for event in day_events[:3]:  # Limit to 3 events per day to avoid too long summaries
+                if hasattr(event, 'description') and event.description:
+                    # Get participating gospels
+                    gospels = getattr(event, 'participating_gospels', ['Unknown Gospel'])
+                    gospel_str = ', '.join(gospels)
+                    
+                    event_text = f"**{event.description}** (reported in {gospel_str})"
+                    
+                    # Add actual text from one gospel if available
+                    if hasattr(event, 'texts') and event.texts:
+                        # Get text from first available gospel
+                        first_gospel = list(event.texts.keys())[0]
+                        text = event.texts[first_gospel]
+                        if text and len(text.strip()) > 10:
+                            # Truncate long texts
+                            if len(text) > 150:
+                                text = text[:150] + "..."
+                            event_text += f"\n\n{text}"
+                    
+                    event_descriptions.append(event_text)
+            
+            if event_descriptions:
+                day_summary += "\n\n".join(event_descriptions)
+                summary_parts.append(day_summary)
+        
+        return "\n\n".join(summary_parts) if summary_parts else ""
